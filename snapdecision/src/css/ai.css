@@ -1,0 +1,5 @@
+/* ─── AI FULL PAGE ───────────────────────── */
+
+.ai-fullpage { height: calc(100vh - 160px); }
+
+.ai-fullpage .ai-messages { max-height: none; }
