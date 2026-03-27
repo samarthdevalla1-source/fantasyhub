@@ -8,12 +8,19 @@
 }
 
 .stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
   padding: 18px;
   position: relative;
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(245, 166, 35, 0.2);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 .stat-card::before {
@@ -24,9 +31,9 @@
 }
 
 .stat-card.cyan::before   { background: var(--accent); }
-.stat-card.red::before    { background: var(--accent2); }
-.stat-card.yellow::before { background: var(--accent3); }
-.stat-card.green::before  { background: var(--green); }
+.stat-card.red::before    { background: var(--accent); }
+.stat-card.yellow::before { background: var(--accent); }
+.stat-card.green::before  { background: var(--accent); }
 
 .stat-label {
   font-size: 10px;
@@ -37,17 +44,17 @@
 }
 
 .stat-value {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 38px;
   font-weight: 900;
   line-height: 1;
   margin: 6px 0 2px;
 }
 
-.stat-card.cyan   .stat-value { color: var(--accent); }
-.stat-card.red    .stat-value { color: var(--accent2); }
-.stat-card.yellow .stat-value { color: var(--accent3); }
-.stat-card.green  .stat-value { color: var(--green); }
+.stat-card.card1   .stat-value { color: var(--accent); }
+.stat-card.card2    .stat-value { color: var(--accent2); }
+.stat-card.card3 .stat-value { color: var(--accent3); }
+.stat-card.card4  .stat-value { color: var(--accent4); }
 
 .stat-change { font-size: 11px; color: var(--muted); }
 
@@ -74,7 +81,7 @@
 .rec-reason { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
 .rec-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 1px;
@@ -116,3 +123,28 @@
   border-radius: 2px;
   transition: width 0.6s ease;
 }
+/* count up animation for stat values */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+  margin: 6px 0 2px;
+  animation: countUp 0.5s ease forwards;
+}
+
+.stat-card:nth-child(1) .stat-value { animation-delay: 0.1s; }
+.stat-card:nth-child(2) .stat-value { animation-delay: 0.2s; }
+.stat-card:nth-child(3) .stat-value { animation-delay: 0.3s; }
+.stat-card:nth-child(4) .stat-value { animation-delay: 0.4s; }

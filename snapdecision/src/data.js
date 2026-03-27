@@ -9,19 +9,6 @@ export const ROSTER = [
   { name: "SF 49ers",        pos: "DEF", team: "SF",  opp: "vs ARI", proj: 10.2, pts: 13.0, status: "active",       trend: 84 },
 ];
 
-export const WAIVER = [
-  { name: "Gus Edwards",  pos: "RB", team: "LAC", owned: "34%", pts: 16.2, trend: "+4.8" },
-  { name: "Keon Coleman", pos: "WR", team: "BUF", owned: "41%", pts: 14.8, trend: "+6.1" },
-  { name: "Brock Bowers", pos: "TE", team: "LV",  owned: "67%", pts: 18.1, trend: "+2.3" },
-  { name: "Tyjae Spears", pos: "RB", team: "TEN", owned: "28%", pts: 12.4, trend: "+3.9" },
-];
-
-export const SLEEPERS = [
-  { name: "Rashid Shaheed", pos: "WR", team: "NO",  pts: 11.2, games: 6, trend: 78 },
-  { name: "Blake Corum",    pos: "RB", team: "LAR", pts: 9.8,  games: 4, trend: 65 },
-  { name: "Cade Stover",    pos: "TE", team: "HOU", pts: 8.4,  games: 5, trend: 71 },
-];
-
 export const SYSTEM_PROMPT = `You are an elite Fantasy Football AI analyst. You have access to the user's roster and player data. Be concise, direct, and data-driven. Give specific actionable advice. Keep responses under 4 sentences unless a deeper breakdown is requested.
 
 Current Roster:

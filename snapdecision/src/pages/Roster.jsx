@@ -31,7 +31,7 @@ export default function Roster() {
                   <span style={{ fontSize: 12, textTransform: "capitalize" }}>{p.status}</span>
                 </td>
                 <td><span className="proj-pts">{p.pts}</span></td>
-                <td style={{ color: "var(--accent)", fontFamily: "'Barlow Condensed'", fontSize: 16, fontWeight: 700 }}>{p.proj}</td>
+                <td style={{ color: "var(--accent)", fontFamily: "'Rajdhani'", fontSize: 16, fontWeight: 700 }}>{p.proj}</td>
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 60, height: 4, background: "var(--border)", borderRadius: 2 }}>

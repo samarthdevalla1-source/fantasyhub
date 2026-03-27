@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { syncPlayers, syncStats } from '../api.js'
 import { ROSTER, SYSTEM_PROMPT, WELCOME_MESSAGE } from "../data.js";
 import "../css/dashboard.css";
 
@@ -17,6 +18,10 @@ export default function Dashboard() {
   const [messages, setMessages] = useState([{ role: "assistant", content: WELCOME_MESSAGE }]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
+
+useEffect(() => {
+  syncPlayers().then(() => syncStats())
+}, [])
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -49,10 +54,10 @@ export default function Dashboard() {
       </div>
 
       <div className="stat-grid">
-        <div className="stat-card cyan"><div className="stat-label">Proj. Points</div><div className="stat-value">138.2</div><div className="stat-change">↑ +4.1 from last week</div></div>
-        <div className="stat-card yellow"><div className="stat-label">Season Record</div><div className="stat-value">7–5</div><div className="stat-change">3rd in league</div></div>
-        <div className="stat-card green"><div className="stat-label">Avg Pts/Wk</div><div className="stat-value">121.4</div><div className="stat-change">↑ +8.2 last 4 weeks</div></div>
-        <div className="stat-card red"><div className="stat-label">Injuries</div><div className="stat-value">1</div><div className="stat-change">Tyreek Hill — Q</div></div>
+        <div className="stat-card card1"><div className="stat-label">Proj. Points</div><div className="stat-value">138.2</div><div className="stat-change">↑ +4.1 from last week</div></div>
+        <div className="stat-card card2"><div className="stat-label">Season Record</div><div className="stat-value">7–5</div><div className="stat-change">3rd in league</div></div>
+        <div className="stat-card card3"><div className="stat-label">Avg Pts/Wk</div><div className="stat-value">121.4</div><div className="stat-change">↑ +8.2 last 4 weeks</div></div>
+        <div className="stat-card card4"><div className="stat-label">Injuries</div><div className="stat-value">1</div><div className="stat-change">Tyreek Hill — Q</div></div>
       </div>
 
       <div className="three-col">
