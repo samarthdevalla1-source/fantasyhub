@@ -34,16 +34,52 @@
 .tab-content.active { display: grid; }
 
 .player-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
   padding: 14px;
   cursor: pointer;
-  transition: all 0.15s;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  animation: cardFadeIn 0.4s ease forwards;
+  opacity: 0;
 }
 
-.player-card:hover   { border-color: var(--accent); transform: translateY(-1px); }
-.player-card.sleeper { border-color: rgba(0,229,255,0.2); }
+.player-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(245, 166, 35, 0.15);
+}
+
+.player-card.sleeper {
+  border-color: rgba(0,229,255,0.2);
+}
+
+.player-card:active {
+  transform: translateY(-2px) scale(1.01);
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.player-grid .player-card:nth-child(1)  { animation-delay: 0.05s; }
+.player-grid .player-card:nth-child(2)  { animation-delay: 0.10s; }
+.player-grid .player-card:nth-child(3)  { animation-delay: 0.15s; }
+.player-grid .player-card:nth-child(4)  { animation-delay: 0.20s; }
+.player-grid .player-card:nth-child(5)  { animation-delay: 0.25s; }
+.player-grid .player-card:nth-child(6)  { animation-delay: 0.30s; }
+.player-grid .player-card:nth-child(7)  { animation-delay: 0.35s; }
+.player-grid .player-card:nth-child(8)  { animation-delay: 0.40s; }
+.player-grid .player-card:nth-child(9)  { animation-delay: 0.45s; }
 
 .player-card-top {
   display: flex;
@@ -52,7 +88,7 @@
 }
 
 .player-name {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 16px;
   font-weight: 700;
   text-transform: uppercase;
@@ -72,7 +108,7 @@
 .mini-stat { text-align: center; }
 
 .mini-stat-val {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 18px;
   font-weight: 700;
 }
