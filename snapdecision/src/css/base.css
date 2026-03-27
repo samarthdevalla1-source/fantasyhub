@@ -26,6 +26,17 @@ body {
   font-family: 'Inter', sans-serif;
   min-height: 100vh;
 }
+/* ─── LOADING SCREEN ─────────────────────── */
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 20px;
+  color: var(--muted);
+  background: #080808;
+}
 /* ─── APP LAYOUT ─────────────────────────── */
 
 .app {
