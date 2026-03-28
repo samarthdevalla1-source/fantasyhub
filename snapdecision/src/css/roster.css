@@ -1,5 +1,3 @@
-/* ─── ROSTER TABLE ───────────────────────── */
-
 .roster-table { width: 100%; border-collapse: collapse; }
 
 .roster-table th {
@@ -25,4 +23,33 @@
   font-family: 'Rajdhani', sans-serif;
   font-size: 17px;
   font-weight: 700;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.search-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.search-result-row:hover { background: rgba(255,255,255,0.04); }
+.search-result-row:last-child { border-bottom: none; }
+
+.roster-table tr {
+  position: relative;
+  z-index: 0;
 }

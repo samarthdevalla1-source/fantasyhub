@@ -1,13 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { getPlayers, syncStats } from "../api.js";
+import { getPlayers } from "../api.js";
 import "../css/players.css";
 
 function trendColor(t) {
   return t > 80 ? "var(--green)" : t > 60 ? "var(--accent)" : "var(--accent3)";
 }
 
-export default function Players() {
+export default function Players({ onPlayerClick }) {
   const [activeTab, setActiveTab] = useState("my-players");
 const [players, setPlayers] = useState([]);
 const [search, setSearch] = useState("");
@@ -16,7 +16,6 @@ const [posFilter, setPosFilter] = useState("ALL")
 
 useEffect(() => {
   const load = async () => {
-    await syncStats()
     const data = await getPlayers()
     setPlayers(data)
   }
@@ -98,11 +97,11 @@ const filteredPlayers = players
       {activeTab === "my-players" && (
         <div className="player-grid" key={filteredPlayers.length}>
           {filteredPlayers.map((p, i) => (
-         <div key={i} className="player-card">
-  <div className="player-card-top">
-    <div>
-      <div className="player-name">{p.name}</div>
-      <div className="player-meta">{p.team}</div>
+            <div key={i} className="player-card" onClick={() => onPlayerClick(p)}>
+              <div className="player-card-top">
+                <div>
+                  <div className="player-name">{p.name}</div>
+                  <div className="player-meta">{p.team}</div>
     </div>
     <span className={`pos-badge pos-${p.position}`}>{p.position}</span>
   </div>

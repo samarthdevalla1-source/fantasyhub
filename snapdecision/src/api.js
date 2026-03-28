@@ -109,7 +109,7 @@ export async function syncStats() {
 
   const allWeekStats = await Promise.all(
     weeks.map(week =>
-      fetch(`https://api.sleeper.app/v1/stats/nfl/regular/2024/${week}`)
+      fetch(`https://api.sleeper.app/v1/stats/nfl/regular/2025/${week}`)
         .then(res => res.json())
     )
   )

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
 import { getSession, getProfile, signOut } from "./auth.js"
+import { syncPlayers, syncStats, getRoster } from "./api.js"
 import Login from "./pages/Login.jsx"
-
+import RosterSetup from "./components/RosterSetup.jsx"
+import PlayerProfile from "./components/PlayerProfile.jsx"
 import Dashboard from "./pages/Dashboard.jsx";
 import Roster    from "./pages/Roster.jsx";
 import Players   from "./pages/Players.jsx";
@@ -15,18 +17,16 @@ const NAV = [
   { id: "ai",        icon: "🤖", label: "AI Analyst" },
 ];
 
-const PAGES = {
-  dashboard: <Dashboard />,
-  roster:    <Roster />,
-  players:   <Players />,
-  ai:        <AI />,
-};
+
 
 export default function App() {
   const [activePage, setActivePage] = useState("dashboard")
   const [session, setSession]       = useState(null)
   const [profile, setProfile]       = useState(null)
   const [loading, setLoading]       = useState(true)
+  const [showRosterSetup, setShowRosterSetup] = useState(false)
+  const [rosterVersion, setRosterVersion] = useState(0)
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
 
   useEffect(() => {
     getSession().then(async s => {
@@ -39,14 +39,21 @@ export default function App() {
     })
   }, [])
 
+  useEffect(() => {
+  syncPlayers().then(() => syncStats())
+}, []) 
+
   async function handleLogin() {
-    const s = await getSession()
-    setSession(s)
-    if (s) {
-      const p = await getProfile(s.user.id)
-      setProfile(p)
-    }
+  const s = await getSession()
+  setSession(s)
+  if (s) {
+    const p = await getProfile(s.user.id)
+    setProfile(p)
+    const roster = await getRoster(s.user.id)
+    console.log("roster length:", roster.length)
+    if (roster.length === 0) setShowRosterSetup(true)
   }
+}
 
   async function handleSignOut() {
     await signOut()
@@ -57,6 +64,13 @@ export default function App() {
 
   if (loading) return <div className="loading-screen">Loading...</div>
   if (!session) return <Login onLogin={handleLogin} />
+
+  const PAGES = {
+  dashboard: <Dashboard userId={session?.user?.id} rosterVersion={rosterVersion} onPlayerClick={setSelectedPlayer} />,
+  roster:    <Roster userId={session?.user?.id} rosterVersion={rosterVersion} onPlayerClick={setSelectedPlayer} />,
+  players:   <Players onPlayerClick={setSelectedPlayer} />,
+  ai:        <AI />,
+}
 
   return (
     <div className="app">
@@ -93,6 +107,19 @@ export default function App() {
       <main className="main">
         {PAGES[activePage]}
       </main>
+     {showRosterSetup && (
+  <RosterSetup
+    userId={session?.user?.id}
+    onComplete={() => {
+      setShowRosterSetup(false)
+      setRosterVersion(v => v + 1)
+    }}
+  />
+)}
+<PlayerProfile
+  player={selectedPlayer}
+  onClose={() => setSelectedPlayer(null)}
+/>
     </div>
   )
 }
