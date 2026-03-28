@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getRoster, addToRoster, removeFromRoster, getPlayers } from "../api.js";
 import "../css/roster.css";
-import Dropdown from "../components/Dropdown.jsx";
-
+import { SearchDropdown } from "../components/Dropdown.jsx";
 function trendColor(t) {
   return t > 80 ? "var(--green)" : t > 60 ? "var(--accent)" : "var(--accent3)";
 }
@@ -150,7 +149,7 @@ const [dropdownStyle, setDropdownStyle] = useState({})
       </div>
 
       {searchResults.length > 0 && (
-      <Dropdown
+      <SearchDropdown
         results={searchResults}
         onAdd={p => handleAdd(p.id)}
         style={dropdownStyle}

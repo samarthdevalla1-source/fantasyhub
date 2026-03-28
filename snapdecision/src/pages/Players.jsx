@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { getPlayers } from "../api.js";
+import { SelectDropdown } from "../components/Dropdown.jsx"
 import "../css/players.css";
 
 function trendColor(t) {
@@ -46,47 +47,27 @@ const filteredPlayers = players
     value={search}
     onChange={e => setSearch(e.target.value)}
   />
-  <select
+  <SelectDropdown
     value={posFilter}
-    onChange={e => setPosFilter(e.target.value)}
-    style={{
-      background: "var(--surface2)",
-      border: "1px solid var(--border)",
-      color: "var(--text)",
-      borderRadius: 6,
-      padding: "9px 14px",
-      fontFamily: "Inter, sans-serif",
-      fontSize: 13,
-      outline: "none",
-      cursor: "pointer"
-    }}
-  >
-    <option value="ALL">All Positions</option>
-    <option value="QB">QB</option>
-    <option value="RB">RB</option>
-    <option value="WR">WR</option>
-    <option value="TE">TE</option>
-    <option value="K">K</option>
-  </select>
-  <select
+    onChange={setPosFilter}
+    options={[
+      { value: "ALL", label: "All Positions" },
+      { value: "QB",  label: "QB" },
+      { value: "RB",  label: "RB" },
+      { value: "WR",  label: "WR" },
+      { value: "TE",  label: "TE" },
+      { value: "K",   label: "K" },
+    ]}
+  />
+  <SelectDropdown
     value={sortBy}
-    onChange={e => setSortBy(e.target.value)}
-    style={{
-      background: "var(--surface2)",
-      border: "1px solid var(--border)",
-      color: "var(--text)",
-      borderRadius: 6,
-      padding: "9px 14px",
-      fontFamily: "Inter, sans-serif",
-      fontSize: 13,
-      outline: "none",
-      cursor: "pointer"
-    }}
-  >
-    <option value="most">Sort: Most Points</option>
-    <option value="least">Sort: Least Points</option>
-    <option value="name">Sort: Name</option>
-  </select>
+    onChange={setSortBy}
+    options={[
+      { value: "most",  label: "Sort: Most Points" },
+      { value: "least", label: "Sort: Least Points" },
+      { value: "name",  label: "Sort: Name" },
+    ]}
+  />
 </div>
 
       <div className="tabs">

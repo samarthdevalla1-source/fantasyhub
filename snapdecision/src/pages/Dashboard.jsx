@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { SYSTEM_PROMPT, WELCOME_MESSAGE } from "../data.js";
 import "../css/dashboard.css";
 import { getRoster } from "../api.js"
 
@@ -8,15 +7,44 @@ function trendColor(t) {
 }
 
 export default function Dashboard({ userId, rosterVersion, onPlayerClick }) {
-  const [messages, setMessages] = useState([{ role: "assistant", content: WELCOME_MESSAGE }]);
+  const [messages, setMessages] = useState([{ 
+  role: "assistant", 
+  content: "Welcome back, Coach. Add some players to your roster and I'll give you real personalized advice!" }]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [roster, setRoster] = useState([]);
 
+  function buildSystemPrompt() {
+  if (roster.length === 0) return "You are an elite Fantasy Football AI analyst. Be concise, direct, and data-driven."
+
+  const rosterContext = roster.map(r => {
+    const p = r.players
+    return `${p.name} (${p.position}, ${p.team}): avg ${p.stats?.avg || 0} pts, projected ${p.stats?.proj || 0} pts, trend score ${p.stats?.trend || 0}/100, status: ${p.status}`
+  }).join("\n")
+
+  return `You are an elite Fantasy Football AI analyst. You have access to the user's real roster data. Be concise, direct, and data-driven. Give specific actionable advice. Keep responses under 4 sentences unless a deeper breakdown is requested.
+
+Current Roster:
+${rosterContext}
+
+Base all recommendations on this real roster data.`
+}
+/* Loads user profile from login session, then loads roster and player data for the dashboard and AI context */
   useEffect(() => {
     if (!userId) return
     getRoster(userId).then(data => setRoster(data))
   }, [userId, rosterVersion])
+/* simulates a personalized welcome message based on the user's roster, and sets up the system prompt for the AI to have real roster context for advice */
+  useEffect(() => {
+  if (roster.length === 0) return
+  const top = roster
+    .slice()
+    .sort((a, b) => (b.players?.stats?.avg || 0) - (a.players?.stats?.avg || 0))[0]?.players
+  setMessages([{
+    role: "assistant",
+    content: `Welcome back, Coach. Your roster has ${roster.length} players. Your top performer is ${top?.name} averaging ${top?.stats?.avg || 0} pts. Ask me anything about your roster!`
+  }])
+}, [roster])
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -29,7 +57,12 @@ export default function Dashboard({ userId, rosterVersion, onPlayerClick }) {
       const res  = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYSTEM_PROMPT, messages: next }),
+       body: JSON.stringify({ 
+  model: "claude-sonnet-4-20250514", 
+  max_tokens: 1000, 
+  system: buildSystemPrompt(), 
+  messages: next 
+}),
       });
       const data  = await res.json();
       const reply = data.content?.[0]?.text || "Sorry, couldn't process that.";
