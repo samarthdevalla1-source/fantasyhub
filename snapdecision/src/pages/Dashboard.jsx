@@ -85,7 +85,7 @@ Base all recommendations on this real roster data.`
   <div className="stat-card cyan">
     <div className="stat-label">Proj. Points</div>
     <div className="stat-value">
-      {roster.reduce((sum, r) => sum + (r.players?.stats?.proj || 0), 0).toFixed(1)}
+      {roster.filter(r => r.is_starter).reduce((sum, r) => sum + (r.players?.stats?.proj || 0), 0).toFixed(1)}
     </div>
     <div className="stat-change">{roster.length} players on roster</div>
   </div>

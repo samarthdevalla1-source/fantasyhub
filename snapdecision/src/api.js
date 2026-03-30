@@ -65,6 +65,7 @@ export async function getRoster(userId) {
     .from('rosters')
     .select('*, players(*)')
     .eq('user_id', userId)
+    .order('slot')
 
   if (error) { console.error('Error fetching roster:', error); return [] }
   return data
@@ -130,7 +131,11 @@ export async function syncStats() {
       ? Math.round((weeklyPoints.reduce((a, b) => a + b, 0) / weeklyPoints.length) * 10) / 10
       : 0
 
-    const proj = avg
+const recentAvg = weeklyPoints.length >= 3
+  ? weeklyPoints.slice(-3).reduce((a, b) => a + b, 0) / 3
+  : avg
+
+const proj = Math.round(((avg * 0.5) + (recentAvg * 0.5)) * 10) / 10
 
     const trend = weeklyPoints.length >= 3
       ? Math.round((weeklyPoints.slice(-3).reduce((a, b) => a + b, 0) / 3) * 10) / 10
@@ -148,4 +153,27 @@ export async function syncStats() {
 
   if (updateError) console.error('Error updating stats:', updateError)
   else console.log('Stats synced successfully')
+}
+
+export async function saveLineup(userId, lineup) {
+  for (const p of lineup) {
+    const { error } = await supabase
+      .from('rosters')
+      .update({ is_starter: p.is_starter, slot: p.slot })
+      .eq('user_id', userId)
+      .eq('player_id', p.player_id)
+
+    if (error) console.error('Error saving lineup:', error)
+  }
+}
+
+export async function getLineup(userId) {
+  const { data, error } = await supabase
+    .from('rosters')
+    .select('*, players(*)')
+    .eq('user_id', userId)
+    .order('slot')
+
+  if (error) { console.error('Error fetching lineup:', error); return [] }
+  return data
 }

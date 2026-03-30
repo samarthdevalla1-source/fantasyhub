@@ -80,7 +80,20 @@ const filteredPlayers = players
           {filteredPlayers.map((p, i) => (
             <div key={i} className="player-card" onClick={() => onPlayerClick(p)}>
               <div className="player-card-top">
-                <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <img
+        src={`https://sleepercdn.com/content/nfl/players/thumb/${p.id}.jpg`}
+        alt={p.name}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          objectFit: "cover",
+          border: "1px solid rgba(255,255,255,0.1)",
+          background: "rgba(255,255,255,0.05)"
+        }}
+        onError={e => e.target.style.display = "none"}
+      />
                   <div className="player-name">{p.name}</div>
                   <div className="player-meta">{p.team}</div>
     </div>
