@@ -11,6 +11,16 @@ export default function PlayerProfile({ player, onClose }) {
   const trend  = player.stats?.trend || 0
   const max    = Math.max(...weekly, 1)
 
+const [allPlayers, setAllPlayers] = useState([])
+
+useEffect(() => {
+  getPlayers().then(data => setAllPlayers(data))
+}, [])
+
+const similarPlayers = allPlayers.length > 0
+  ? getSimilarPlayers(player, allPlayers)
+  : [] 
+
   return createPortal(
     <div style={{
       position: "fixed",
@@ -169,7 +179,66 @@ export default function PlayerProfile({ player, onClose }) {
           </div>
         </div>
 
-      </div>
+      {similarPlayers.length > 0 && (
+  <div>
+    <div style={{
+      fontSize: 11,
+      color: "var(--muted)",
+      textTransform: "uppercase",
+      letterSpacing: 2,
+      marginBottom: 12
+    }}>
+      Similar Players
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {similarPlayers.map((p, i) => (
+        <div key={i} style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 14px",
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 8,
+          cursor: "pointer",
+          transition: "border-color 0.15s"
+        }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+        onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <img
+              src={`https://sleepercdn.com/content/nfl/players/thumb/${p.id}.jpg`}
+              alt={p.name}
+              style={{
+                width: 40, height: 40,
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.05)"
+              }}
+              onError={e => e.target.style.display = "none"}
+            />
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.team} · {p.stats?.avg || 0} avg pts</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {(() => {
+              const trend = getPlayerTrend(p)
+              if (trend === "hot") return <span style={{ fontSize: 10, color: "var(--green)" }}>🔥</span>
+              if (trend === "cold") return <span style={{ fontSize: 10, color: "var(--accent2)" }}>📉</span>
+              return null
+            })()}
+            <span className={`pos-badge pos-${p.position}`}>{p.position}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+        </div>
     </div>,
     document.getElementById("portal")
   )
