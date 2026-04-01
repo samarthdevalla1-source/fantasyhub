@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import "../css/dashboard.css";
-import { getRoster } from "../api.js"
-
+import { getRoster, calculatecurrentRosterGrade } from "../api.js"
 function trendColor(t) {
   return t > 80 ? "var(--green)" : t > 60 ? "var(--accent)" : "var(--accent3)";
 }
@@ -13,6 +12,7 @@ export default function Dashboard({ userId, rosterVersion, onPlayerClick }) {
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [roster, setRoster] = useState([]);
+  const [currentRosterGrade, setcurrentRosterGrade] = useState(null)
 
   function buildSystemPrompt() {
   if (roster.length === 0) return "You are an elite Fantasy Football AI analyst. Be concise, direct, and data-driven."
@@ -30,10 +30,13 @@ ${rosterContext}
 Base all recommendations on this real roster data.`
 }
 /* Loads user profile from login session, then loads roster and player data for the dashboard and AI context */
-  useEffect(() => {
-    if (!userId) return
-    getRoster(userId).then(data => setRoster(data))
-  }, [userId, rosterVersion])
+ useEffect(() => {
+  if (!userId) return
+  getRoster(userId).then(data => {
+    setRoster(data)
+    setcurrentRosterGrade(calculatecurrentRosterGrade(data))
+  })
+}, [userId, rosterVersion])
 /* simulates a personalized welcome message based on the user's roster, and sets up the system prompt for the AI to have real roster context for advice */
   useEffect(() => {
   if (roster.length === 0) return
@@ -117,6 +120,49 @@ Base all recommendations on this real roster data.`
     <div className="stat-change">Players questionable or out</div>
   </div>
 </div>
+
+{currentRosterGrade && (
+  <div className="card" style={{ marginBottom: 20 }}>
+    <div className="card-title">Roster Grade</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+      <div style={{
+        fontFamily: "'Rajdhani', sans-serif",
+        fontSize: 72,
+        fontWeight: 900,
+        color: currentRosterGrade.score >= 90 ? "var(--green)" :
+               currentRosterGrade.score >= 80 ? "var(--accent)" :
+               currentRosterGrade.score >= 70 ? "var(--accent3)" : "var(--accent2)",
+        lineHeight: 1
+      }}>
+        {currentRosterGrade.grade}
+      </div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+        {[
+          { label: "Star Power",        value: currentRosterGrade.breakdown.avgScore },
+          { label: "Positional Balance", value: currentRosterGrade.breakdown.balanceScore },
+          { label: "Injury Risk",        value: currentRosterGrade.breakdown.injuryScore },
+          { label: "Bench Depth",        value: currentRosterGrade.breakdown.depthScore },
+        ].map((s, i) => (
+          <div key={i}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+              <span style={{ color: "var(--muted)" }}>{s.label}</span>
+              <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>{s.value}</span>
+            </div>
+            <div style={{ height: 4, background: "var(--border)", borderRadius: 2 }}>
+              <div style={{
+                width: `${s.value}%`,
+                height: "100%",
+                borderRadius: 2,
+                background: s.value >= 80 ? "var(--green)" : s.value >= 60 ? "var(--accent)" : "var(--accent2)",
+                transition: "width 0.6s ease"
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
       <div className="three-col">
         <div className="card">

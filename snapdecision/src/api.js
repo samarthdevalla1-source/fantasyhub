@@ -223,3 +223,57 @@ export function getSimilarPlayers(player, allPlayers, count = 3) {
     .sort((a, b) => a.distance - b.distance)
     .slice(0, count)
 }
+
+export function calculatecurrentRosterGrade(roster) {
+  if (!roster || roster.length === 0) return { grade: "N/A", score: 0, breakdown: {} }
+
+  const starters = roster.filter(r => r.is_starter)
+  const bench = roster.filter(r => !r.is_starter)
+
+  // Avg points score (0-100)
+  const avgPts = starters.length > 0
+    ? starters.reduce((sum, r) => sum + (r.players?.stats?.avg || 0), 0) / starters.length
+    : 0
+  const avgScore = Math.min((avgPts / 20) * 100, 100)
+
+  // Positional balance score (0-100)
+  const requiredSlots = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'K']
+  const filledSlots = requiredSlots.filter(slot => roster.some(r => r.slot === slot))
+  const balanceScore = (filledSlots.length / requiredSlots.length) * 100
+
+  // Injury risk score (0-100)
+  const injuredStarters = starters.filter(r => r.players?.status !== "active").length
+  const injuryScore = Math.max(100 - (injuredStarters / Math.max(starters.length, 1)) * 100, 0)
+
+  // Bench depth score (0-100)
+  const benchAvg = bench.length > 0
+    ? bench.reduce((sum, r) => sum + (r.players?.stats?.avg || 0), 0) / bench.length
+    : 0
+  const depthScore = Math.min((benchAvg / 15) * 100, 100)
+
+  // Weighted total
+  const total = (avgScore * 0.4) + (balanceScore * 0.2) + (injuryScore * 0.2) + (depthScore * 0.2)
+
+  const grade =
+    total >= 93 ? "A+" :
+    total >= 90 ? "A"  :
+    total >= 87 ? "A-" :
+    total >= 83 ? "B+" :
+    total >= 80 ? "B"  :
+    total >= 77 ? "B-" :
+    total >= 73 ? "C+" :
+    total >= 70 ? "C"  :
+    total >= 67 ? "C-" :
+    total >= 60 ? "D"  : "F"
+
+  return {
+    grade,
+    score: Math.round(total),
+    breakdown: {
+      avgScore:     Math.round(avgScore),
+      balanceScore: Math.round(balanceScore),
+      injuryScore:  Math.round(injuryScore),
+      depthScore:   Math.round(depthScore)
+    }
+  }
+}

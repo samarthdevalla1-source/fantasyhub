@@ -40,8 +40,17 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-  syncPlayers().then(() => syncStats())
-}, []) 
+  const lastSync = localStorage.getItem('lastSync')
+  const now = Date.now()
+  const oneDay = 24 * 60 * 60 * 1000
+
+  if (!lastSync || now - parseInt(lastSync) > oneDay) {
+    syncPlayers().then(() => syncStats()).then(() => {
+      localStorage.setItem('lastSync', now.toString())
+      setRosterVersion(v => v + 1)
+    })
+  }
+}, [])
 
   async function handleLogin() {
   const s = await getSession()
