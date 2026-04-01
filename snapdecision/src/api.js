@@ -177,3 +177,49 @@ export async function getLineup(userId) {
   if (error) { console.error('Error fetching lineup:', error); return [] }
   return data
 }
+
+export function getPlayerTrend(player) {
+  const weekly = player.stats?.weeklyPoints || []
+  const avg = player.stats?.avg || 0
+
+  if (weekly.length < 3 || avg === 0) return "neutral"
+
+  const recent = weekly.slice(-3).reduce((a, b) => a + b, 0) / 3
+  const diff = ((recent - avg) / avg) * 100
+
+  if (diff >= 20) return "hot"
+  if (diff <= -20) return "cold"
+  return "neutral"
+}
+
+export function getSimilarPlayers(player, allPlayers, count = 3) {
+  const weekly = player.stats?.weeklyPoints || []
+  const avg = player.stats?.avg || 0
+  const trend = player.stats?.trend || 0
+
+  const stdDev = weekly.length > 1
+    ? Math.sqrt(weekly.reduce((sum, p) => sum + Math.pow(p - avg, 2), 0) / weekly.length)
+    : 0
+
+  return allPlayers
+    .filter(p => p.id !== player.id && p.position === player.position)
+    .filter(p => (p.stats?.avg || 0) > 0)
+    .map(p => {
+      const pWeekly = p.stats?.weeklyPoints || []
+      const pAvg = p.stats?.avg || 0
+      const pTrend = p.stats?.trend || 0
+      const pStdDev = pWeekly.length > 1
+        ? Math.sqrt(pWeekly.reduce((sum, pt) => sum + Math.pow(pt - pAvg, 2), 0) / pWeekly.length)
+        : 0
+
+      const distance = Math.sqrt(
+        Math.pow(avg - pAvg, 2) +
+        Math.pow(trend - pTrend, 2) * 0.5 +
+        Math.pow(stdDev - pStdDev, 2) * 0.3
+      )
+
+      return { ...p, distance }
+    })
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, count)
+}

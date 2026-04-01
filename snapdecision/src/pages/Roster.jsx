@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { getRoster, addToRoster, removeFromRoster, getPlayers, saveLineup } from "../api.js"
+import { getRoster, addToRoster, removeFromRoster, getPlayers, saveLineup, getPlayerTrend } from "../api.js"
 import { calculateBestLineup, SLOT_LABELS, SLOT_ORDER } from "../lineup.js"
 import { SearchDropdown } from "../components/Dropdown.jsx"
 import "../css/roster.css"
@@ -167,7 +167,35 @@ if (!validSwap) return
               style={{ fontWeight: 600, cursor: "pointer", color: "var(--accent)" }}
               onClick={() => onPlayerClick(r.players)}
             >{p.name}</span>
-          </div>
+            </div>
+            {(() => {
+  const trend = getPlayerTrend(r.players)
+  if (trend === "hot") return <span style={{
+    fontSize: 10,
+    fontWeight: 700,
+    color: "var(--green)",
+    background: "rgba(0,200,83,0.1)",
+    border: "1px solid rgba(0,200,83,0.2)",
+    borderRadius: 4,
+    padding: "2px 6px",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginLeft: 6
+  }}>🔥</span>
+  if (trend === "cold") return <span style={{
+    fontSize: 10,
+    fontWeight: 700,
+    color: "var(--accent2)",
+    background: "rgba(255,61,87,0.1)",
+    border: "1px solid rgba(255,61,87,0.2)",
+    borderRadius: 4,
+    padding: "2px 6px",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginLeft: 6
+  }}>📉</span>
+  return null
+})()}
         </td>
         <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
         <td style={{ color: "var(--muted)", fontSize: 12 }}>{p.team}</td>

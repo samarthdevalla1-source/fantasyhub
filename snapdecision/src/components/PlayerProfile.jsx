@@ -1,4 +1,6 @@
 import { createPortal } from "react-dom"
+import { useState, useEffect } from "react"
+import { getPlayers, getSimilarPlayers, getPlayerTrend } from "../api.js"
 
 export default function PlayerProfile({ player, onClose }) {
   if (!player) return null
@@ -51,6 +53,32 @@ export default function PlayerProfile({ player, onClose }) {
               textTransform: "uppercase",
               letterSpacing: 1
             }}>{player.name}</div>
+            {(() => {
+  const trend = getPlayerTrend(player)
+  if (trend === "hot") return <span style={{
+    fontSize: 11,
+    fontWeight: 700,
+    color: "var(--green)",
+    background: "rgba(0,200,83,0.1)",
+    border: "1px solid rgba(0,200,83,0.2)",
+    borderRadius: 4,
+    padding: "3px 8px",
+    letterSpacing: 1,
+    textTransform: "uppercase"
+  }}>🔥 Trending Up</span>
+  if (trend === "cold") return <span style={{
+    fontSize: 11,
+    fontWeight: 700,
+    color: "var(--accent2)",
+    background: "rgba(255,61,87,0.1)",
+    border: "1px solid rgba(255,61,87,0.2)",
+    borderRadius: 4,
+    padding: "3px 8px",
+    letterSpacing: 1,
+    textTransform: "uppercase"
+  }}>📉 Trending Down</span>
+  return null
+})()}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
               <span className={`pos-badge pos-${player.position}`}>{player.position}</span>
               <span style={{ fontSize: 13, color: "var(--muted)" }}>{player.team}</span>

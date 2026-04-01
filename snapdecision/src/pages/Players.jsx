@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { getPlayers } from "../api.js";
+import { getPlayers, getPlayerTrend } from "../api.js";
 import { SelectDropdown } from "../components/Dropdown.jsx"
 import "../css/players.css";
 
@@ -95,6 +95,16 @@ const filteredPlayers = players
         onError={e => e.target.style.display = "none"}
       />
                   <div className="player-name">{p.name}</div>
+                  {(() => {
+  const trend = getPlayerTrend(p)
+  if (trend === "hot") return <span style={{
+    fontSize: 10, fontWeight: 700, color: "var(--green)", background: "rgba(0,200,83,0.1)", border: "1px solid rgba(0,200,83,0.2)", borderRadius: 4, padding: "2px 6px", letterSpacing: 1, textTransform: "uppercase"
+  }}>Trending 🔥</span>
+  if (trend === "cold") return <span style={{
+    fontSize: 10, fontWeight: 700, color: "var(--accent2)", background: "rgba(255,61,87,0.1)", border: "1px solid rgba(255,61,87,0.2)", borderRadius: 4, padding: "2px 6px", letterSpacing: 1, textTransform: "uppercase"
+  }}>📉 Cold</span>
+  return null
+})()}
                   <div className="player-meta">{p.team}</div>
     </div>
     <span className={`pos-badge pos-${p.position}`}>{p.position}</span>
