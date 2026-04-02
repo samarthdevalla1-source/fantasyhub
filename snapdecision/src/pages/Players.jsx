@@ -1,22 +1,22 @@
 
 import { useState, useEffect } from "react";
-import { getPlayers, syncStats } from "../api.js";
+import { getPlayers, getPlayerTrend } from "../api.js";
+import { SelectDropdown } from "../components/Dropdown.jsx"
 import "../css/players.css";
 
 function trendColor(t) {
   return t > 80 ? "var(--green)" : t > 60 ? "var(--accent)" : "var(--accent3)";
 }
 
-export default function Players() {
+export default function Players({ onPlayerClick }) {
   const [activeTab, setActiveTab] = useState("my-players");
 const [players, setPlayers] = useState([]);
 const [search, setSearch] = useState("");
-const [sortBy, setSortBy] = useState("most")
+const [sortBy, setSortBy] = useState("proj")
 const [posFilter, setPosFilter] = useState("ALL")
 
 useEffect(() => {
   const load = async () => {
-    await syncStats()
     const data = await getPlayers()
     setPlayers(data)
   }
@@ -30,6 +30,7 @@ const filteredPlayers = players
     if (sortBy === "name")  return a.name.localeCompare(b.name)
     if (sortBy === "most")  return Number(b.stats?.avg || 0) - Number(a.stats?.avg || 0)
     if (sortBy === "least") return Number(a.stats?.avg || 0) - Number(b.stats?.avg || 0)
+    if (sortBy === "proj")  return Number(b.stats?.proj || 0) - Number(a.stats?.proj || 0)
     return 0
   })
 
@@ -47,47 +48,28 @@ const filteredPlayers = players
     value={search}
     onChange={e => setSearch(e.target.value)}
   />
-  <select
+  <SelectDropdown
     value={posFilter}
-    onChange={e => setPosFilter(e.target.value)}
-    style={{
-      background: "var(--surface2)",
-      border: "1px solid var(--border)",
-      color: "var(--text)",
-      borderRadius: 6,
-      padding: "9px 14px",
-      fontFamily: "Inter, sans-serif",
-      fontSize: 13,
-      outline: "none",
-      cursor: "pointer"
-    }}
-  >
-    <option value="ALL">All Positions</option>
-    <option value="QB">QB</option>
-    <option value="RB">RB</option>
-    <option value="WR">WR</option>
-    <option value="TE">TE</option>
-    <option value="K">K</option>
-  </select>
-  <select
-    value={sortBy}
-    onChange={e => setSortBy(e.target.value)}
-    style={{
-      background: "var(--surface2)",
-      border: "1px solid var(--border)",
-      color: "var(--text)",
-      borderRadius: 6,
-      padding: "9px 14px",
-      fontFamily: "Inter, sans-serif",
-      fontSize: 13,
-      outline: "none",
-      cursor: "pointer"
-    }}
-  >
-    <option value="most">Sort: Most Points</option>
-    <option value="least">Sort: Least Points</option>
-    <option value="name">Sort: Name</option>
-  </select>
+    onChange={setPosFilter}
+    options={[
+      { value: "ALL", label: "All Positions" },
+      { value: "QB",  label: "QB" },
+      { value: "RB",  label: "RB" },
+      { value: "WR",  label: "WR" },
+      { value: "TE",  label: "TE" },
+      { value: "K",   label: "K" },
+    ]}
+  />
+ <SelectDropdown
+  value={sortBy}
+  onChange={setSortBy}
+  options={[
+    { value: "proj",  label: "Sort: Projected" },
+    { value: "most",  label: "Sort: Most Points" },
+    { value: "least", label: "Sort: Least Points" },
+    { value: "name",  label: "Sort: Name" },
+  ]}
+/>
 </div>
 
       <div className="tabs">
@@ -98,11 +80,34 @@ const filteredPlayers = players
       {activeTab === "my-players" && (
         <div className="player-grid" key={filteredPlayers.length}>
           {filteredPlayers.map((p, i) => (
-         <div key={i} className="player-card">
-  <div className="player-card-top">
-    <div>
-      <div className="player-name">{p.name}</div>
-      <div className="player-meta">{p.team}</div>
+            <div key={i} className="player-card" onClick={() => onPlayerClick(p)}>
+              <div className="player-card-top">
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <img
+        src={`https://sleepercdn.com/content/nfl/players/thumb/${p.id}.jpg`}
+        alt={p.name}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          objectFit: "cover",
+          border: "1px solid rgba(255,255,255,0.1)",
+          background: "rgba(255,255,255,0.05)"
+        }}
+        onError={e => e.target.style.display = "none"}
+      />
+                  <div className="player-name">{p.name}</div>
+                  {(() => {
+  const trend = getPlayerTrend(p)
+  if (trend === "hot") return <span style={{
+    fontSize: 10, fontWeight: 700, color: "var(--green)", background: "rgba(0,200,83,0.1)", border: "1px solid rgba(0,200,83,0.2)", borderRadius: 4, padding: "2px 6px", letterSpacing: 1, textTransform: "uppercase"
+  }}>Trending 🔥</span>
+  if (trend === "cold") return <span style={{
+    fontSize: 10, fontWeight: 700, color: "var(--accent2)", background: "rgba(255,61,87,0.1)", border: "1px solid rgba(255,61,87,0.2)", borderRadius: 4, padding: "2px 6px", letterSpacing: 1, textTransform: "uppercase"
+  }}>📉 Cold</span>
+  return null
+})()}
+                  <div className="player-meta">{p.team}</div>
     </div>
     <span className={`pos-badge pos-${p.position}`}>{p.position}</span>
   </div>

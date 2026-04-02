@@ -1,27 +1,53 @@
 import { useState, useEffect } from "react";
-import { syncPlayers, syncStats } from '../api.js'
-import { ROSTER, SYSTEM_PROMPT, WELCOME_MESSAGE } from "../data.js";
 import "../css/dashboard.css";
-
+import { getRoster, calculatecurrentRosterGrade } from "../api.js"
 function trendColor(t) {
   return t > 80 ? "var(--green)" : t > 60 ? "var(--accent)" : "var(--accent3)";
 }
 
-const RECS = [
-  { name: "CeeDee Lamb",    rec: "start", label: "START", reason: "3-game 24+ pt streak vs weak PHI secondary" },
-  { name: "Tyreek Hill",    rec: "sit",   label: "SIT",   reason: "Questionable (knee) — high risk this week" },
-  { name: "Saquon Barkley", rec: "start", label: "START", reason: "Workhorse role, high volume expected" },
-  { name: "Sam LaPorta",    rec: "flex",  label: "FLEX",  reason: "Matchup favorable, moderate upside" },
-];
-
-export default function Dashboard() {
-  const [messages, setMessages] = useState([{ role: "assistant", content: WELCOME_MESSAGE }]);
+export default function Dashboard({ userId, rosterVersion, onPlayerClick }) {
+  const [messages, setMessages] = useState([{ 
+  role: "assistant", 
+  content: "Welcome back, Coach. Add some players to your roster and I'll give you real personalized advice!" }]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
+  const [roster, setRoster] = useState([]);
+  const [currentRosterGrade, setcurrentRosterGrade] = useState(null)
 
-useEffect(() => {
-  syncPlayers().then(() => syncStats())
-}, [])
+  function buildSystemPrompt() {
+  if (roster.length === 0) return "You are an elite Fantasy Football AI analyst. Be concise, direct, and data-driven."
+
+  const rosterContext = roster.map(r => {
+    const p = r.players
+    return `${p.name} (${p.position}, ${p.team}): avg ${p.stats?.avg || 0} pts, projected ${p.stats?.proj || 0} pts, trend score ${p.stats?.trend || 0}/100, status: ${p.status}`
+  }).join("\n")
+
+  return `You are an elite Fantasy Football AI analyst. You have access to the user's real roster data. Be concise, direct, and data-driven. Give specific actionable advice. Keep responses under 4 sentences unless a deeper breakdown is requested.
+
+Current Roster:
+${rosterContext}
+
+Base all recommendations on this real roster data.`
+}
+/* Loads user profile from login session, then loads roster and player data for the dashboard and AI context */
+ useEffect(() => {
+  if (!userId) return
+  getRoster(userId).then(data => {
+    setRoster(data)
+    setcurrentRosterGrade(calculatecurrentRosterGrade(data))
+  })
+}, [userId, rosterVersion])
+/* simulates a personalized welcome message based on the user's roster, and sets up the system prompt for the AI to have real roster context for advice */
+  useEffect(() => {
+  if (roster.length === 0) return
+  const top = roster
+    .slice()
+    .sort((a, b) => (b.players?.stats?.avg || 0) - (a.players?.stats?.avg || 0))[0]?.players
+  setMessages([{
+    role: "assistant",
+    content: `Welcome back, Coach. Your roster has ${roster.length} players. Your top performer is ${top?.name} averaging ${top?.stats?.avg || 0} pts. Ask me anything about your roster!`
+  }])
+}, [roster])
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -34,7 +60,12 @@ useEffect(() => {
       const res  = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYSTEM_PROMPT, messages: next }),
+       body: JSON.stringify({ 
+  model: "claude-sonnet-4-20250514", 
+  max_tokens: 1000, 
+  system: buildSystemPrompt(), 
+  messages: next 
+}),
       });
       const data  = await res.json();
       const reply = data.content?.[0]?.text || "Sorry, couldn't process that.";
@@ -53,25 +84,106 @@ useEffect(() => {
         <div className="page-subtitle">Sunday 1:00 PM kickoff · 3 days away</div>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat-card card1"><div className="stat-label">Proj. Points</div><div className="stat-value">138.2</div><div className="stat-change">↑ +4.1 from last week</div></div>
-        <div className="stat-card card2"><div className="stat-label">Season Record</div><div className="stat-value">7–5</div><div className="stat-change">3rd in league</div></div>
-        <div className="stat-card card3"><div className="stat-label">Avg Pts/Wk</div><div className="stat-value">121.4</div><div className="stat-change">↑ +8.2 last 4 weeks</div></div>
-        <div className="stat-card card4"><div className="stat-label">Injuries</div><div className="stat-value">1</div><div className="stat-change">Tyreek Hill — Q</div></div>
+     <div className="stat-grid">
+  <div className="stat-card cyan">
+    <div className="stat-label">Proj. Points</div>
+    <div className="stat-value">
+      {roster.filter(r => r.is_starter).reduce((sum, r) => sum + (r.players?.stats?.proj || 0), 0).toFixed(1)}
+    </div>
+    <div className="stat-change">{roster.length} players on roster</div>
+  </div>
+  <div className="stat-card yellow">
+    <div className="stat-label">Top Performer</div>
+    <div className="stat-value" style={{ fontSize: 22, paddingTop: 6 }}>
+      {roster.length > 0
+        ? roster.reduce((best, r) =>
+            (r.players?.stats?.avg || 0) > (best.players?.stats?.avg || 0) ? r : best
+          , roster[0])?.players?.name?.split(" ")[1] || "—"
+        : "—"}
+    </div>
+    <div className="stat-change">Highest avg this season</div>
+  </div>
+  <div className="stat-card green">
+    <div className="stat-label">Avg Pts/Player</div>
+    <div className="stat-value">
+      {roster.length > 0
+        ? (roster.reduce((sum, r) => sum + (r.players?.stats?.avg || 0), 0) / roster.length).toFixed(1)
+        : 0}
+    </div>
+    <div className="stat-change">Across all positions</div>
+  </div>
+  <div className="stat-card red">
+    <div className="stat-label">Injuries</div>
+    <div className="stat-value">
+      {roster.filter(r => r.players?.status !== "active").length}
+    </div>
+    <div className="stat-change">Players questionable or out</div>
+  </div>
+</div>
+
+{currentRosterGrade && (
+  <div className="card" style={{ marginBottom: 20 }}>
+    <div className="card-title">Roster Grade</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+      <div style={{
+        fontFamily: "'Rajdhani', sans-serif",
+        fontSize: 72,
+        fontWeight: 900,
+        color: currentRosterGrade.score >= 90 ? "var(--green)" :
+               currentRosterGrade.score >= 80 ? "var(--accent)" :
+               currentRosterGrade.score >= 70 ? "var(--accent3)" : "var(--accent2)",
+        lineHeight: 1
+      }}>
+        {currentRosterGrade.grade}
       </div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+        {[
+          { label: "Star Power",        value: currentRosterGrade.breakdown.avgScore },
+          { label: "Positional Balance", value: currentRosterGrade.breakdown.balanceScore },
+          { label: "Injury Risk",        value: currentRosterGrade.breakdown.injuryScore },
+          { label: "Bench Depth",        value: currentRosterGrade.breakdown.depthScore },
+        ].map((s, i) => (
+          <div key={i}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+              <span style={{ color: "var(--muted)" }}>{s.label}</span>
+              <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>{s.value}</span>
+            </div>
+            <div style={{ height: 4, background: "var(--border)", borderRadius: 2 }}>
+              <div style={{
+                width: `${s.value}%`,
+                height: "100%",
+                borderRadius: 2,
+                background: s.value >= 80 ? "var(--green)" : s.value >= 60 ? "var(--accent)" : "var(--accent2)",
+                transition: "width 0.6s ease"
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
       <div className="three-col">
         <div className="card">
           <div className="card-title">Start/Sit Recommendations</div>
-          {RECS.map((r, i) => (
-            <div key={i} className="rec-row">
-              <div>
-                <div className="rec-name">{r.name}</div>
-                <div className="rec-reason">{r.reason}</div>
-              </div>
-              <div className={`rec-badge ${r.rec}`}>{r.label}</div>
-            </div>
-          ))}
+        
+         {roster.slice().sort((a, b) => (b.players?.stats?.avg || 0) - (a.players?.stats?.avg || 0)).slice(0, 4).map((r, i) => {
+  const p = r.players
+  const avg = p?.stats?.avg || 0
+  const rec = avg > 15 ? "start" : avg > 8 ? "flex" : "sit"
+  const label = avg > 15 ? "START" : avg > 8 ? "FLEX" : "SIT"
+  const reason = avg > 15 ? `Averaging ${avg} pts — strong start candidate` : avg > 8 ? `Averaging ${avg} pts — consider as flex` : `Averaging ${avg} pts — risky start this week`
+  return (
+    <div key={i} className="rec-row">
+      <div>
+        <div className="rec-name" style={{ cursor: "pointer", color: "var(--accent)" }} onClick={() => onPlayerClick(r.players)}>{p?.name}</div>
+        <div className="rec-reason">{reason}</div>
+      </div>
+      <div className={`rec-badge ${rec}`}>{label}</div>
+    </div>
+  )
+})}
         </div>
 
         <div className="ai-panel">
@@ -93,17 +205,23 @@ useEffect(() => {
       <div className="card">
         <div className="card-title">Player Trends</div>
         <div className="trends-grid">
-          {ROSTER.slice(0, 6).map((p, i) => (
-            <div key={i} className="trend-bar-wrap">
-              <div className="trend-bar-header">
-                <span className="name">{p.name}</span>
-                <span className="score">{p.trend}/100</span>
-              </div>
-              <div className="trend-bar-track">
-                <div className="trend-bar-fill" style={{ width: `${p.trend}%`, background: trendColor(p.trend) }} />
-              </div>
-            </div>
-          ))}
+         
+          {roster.slice(0, 6).map((r, i) => {
+  const p = r.players
+  const trend = p?.stats?.trend || 0
+  return (
+    <div key={i} className="trend-bar-wrap">
+      <div className="trend-bar-header">
+        <span className="name">{p?.name}</span>
+        <span className="score">{trend}/100</span>
+      </div>
+      <div className="trend-bar-track">
+        <div className="trend-bar-fill" style={{ width: `${trend}%`, background: trendColor(trend) }} />
+      </div>
+    </div>
+  )
+})}
+
         </div>
       </div>
     </div>
