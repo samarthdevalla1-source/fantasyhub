@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom"
 import { useState, useEffect } from "react"
-import { getPlayers, getSimilarPlayers, getPlayerTrend } from "../api.js"
+import { getPlayers, getSimilarPlayers, getPlayerTrend, getPlayerWeeklyStats } from "../api.js"
 
 export default function PlayerProfile({ player, onClose }) {
   if (!player) return null
@@ -10,12 +10,17 @@ export default function PlayerProfile({ player, onClose }) {
   const proj   = player.stats?.proj || 0
   const trend  = player.stats?.trend || 0
   const max    = Math.max(...weekly, 1)
-
+const [weeklyStats, setWeeklyStats] = useState([])
 const [allPlayers, setAllPlayers] = useState([])
 
 useEffect(() => {
   getPlayers().then(data => setAllPlayers(data))
 }, [])
+
+useEffect(() => {
+  if (!player) return
+  getPlayerWeeklyStats(player.id).then(data => setWeeklyStats(data))
+}, [player])
 
 const similarPlayers = allPlayers.length > 0
   ? getSimilarPlayers(player, allPlayers)
@@ -129,56 +134,78 @@ const similarPlayers = allPlayers.length > 0
         </div>
 
         {/* WEEKLY CHART */}
-        {weekly.length > 0 && (
-          <div>
-            <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 12 }}>
-              Weekly Points — 2025 Season
-            </div>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 80 }}>
-              {weekly.map((pts, i) => (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div style={{
-                    width: "100%",
-                    height: `${(pts / max) * 70}px`,
-                    background: pts > avg ? "var(--accent)" : "rgba(255,255,255,0.15)",
-                    borderRadius: 3,
-                    transition: "height 0.3s ease",
-                    minHeight: pts > 0 ? 3 : 0
-                  }} />
-                  <div style={{ fontSize: 8, color: "var(--muted)" }}>W{i + 1}</div>
-                </div>
-              ))}
-            </div>
+        {weeklyStats.length > 0 && (
+  <div>
+    <div style={{
+      fontSize: 11,
+      color: "var(--muted)",
+      textTransform: "uppercase",
+      letterSpacing: 2,
+      marginBottom: 12
+    }}>
+      Weekly Points — 2025 Season
+    </div>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100 }}>
+      {weeklyStats.map((w, i) => {
+        const max = Math.max(...weeklyStats.map(s => s.points), 1)
+        return (
+          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ fontSize: 9, color: "var(--muted)" }}>{w.points.toFixed(1)}</div>
+            <div style={{
+  width: "100%",
+  height: `${(w.points / max) * 70}px`,
+  background: w.injured 
+    ? "rgba(255,61,87,0.3)"
+    : w.points > (player.stats?.avg || 0) 
+    ? "var(--accent)" 
+    : "rgba(255,255,255,0.15)",
+  borderRadius: 3,
+  transition: "height 0.3s ease",
+  minHeight: w.injured ? 3 : 3,
+  border: w.injured ? "1px solid var(--accent2)" : "none"
+}} />
+            <div style={{ fontSize: 9, color: "var(--muted)" }}>W{w.week}</div>
           </div>
-        )}
+        )
+      })}
+    </div>
+  </div>
+)}
 
         {/* SEASON STATS */}
         <div>
-          <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 12 }}>
-            Season Summary
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[
-              { label: "Games Played",   value: weekly.filter(p => p > 0).length },
-              { label: "Best Game",      value: weekly.length > 0 ? Math.max(...weekly).toFixed(1) : 0 },
-              { label: "Worst Game",     value: weekly.filter(p => p > 0).length > 0 ? Math.min(...weekly.filter(p => p > 0)).toFixed(1) : 0 },
-              { label: "20+ Pt Games",   value: weekly.filter(p => p >= 20).length },
-              { label: "Sub 10 Pt Games", value: weekly.filter(p => p > 0 && p < 10).length },
-            ].map((s, i) => (
-              <div key={i} style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "8px 0",
-                borderBottom: "1px solid rgba(255,255,255,0.04)",
-                fontSize: 13
-              }}>
-                <span style={{ color: "var(--muted)" }}>{s.label}</span>
-                <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 16 }}>{s.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+  <div style={{
+    fontSize: 11,
+    color: "var(--muted)",
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    marginBottom: 12
+  }}>
+    Season Summary
+  </div>
+  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    {[
+      { label: "Games Played",    value: weeklyStats.length },
+      { label: "Best Game",       value: weeklyStats.length > 0 ? Math.max(...weeklyStats.map(w => w.points)).toFixed(1) : 0 },
+      { label: "Worst Game",      value: weeklyStats.length > 0 ? Math.min(...weeklyStats.map(w => w.points)).toFixed(1) : 0 },
+      { label: "20+ Pt Games",    value: weeklyStats.filter(w => w.points >= 20).length },
+      { label: "Sub 10 Pt Games", value: weeklyStats.filter(w => w.points < 10).length },
+    ].map((s, i) => (
+      <div key={i} style={{
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "8px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        fontSize: 13
+      }}>
+        <span style={{ color: "var(--muted)" }}>{s.label}</span>
+        <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 16 }}>{s.value}</span>
+      </div>
+    ))}
+  </div>
+</div>
 
+{/*SIMILAR PLAYERS*/}
       {similarPlayers.length > 0 && (
   <div>
     <div style={{

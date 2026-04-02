@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { getSession, getProfile, signOut } from "./auth.js"
-import { syncPlayers, syncStats, getRoster } from "./api.js"
+import { syncPlayers, syncStats, syncTeams, getRoster } from "./api.js"
 import Login from "./pages/Login.jsx"
 import RosterSetup from "./components/RosterSetup.jsx"
 import PlayerProfile from "./components/PlayerProfile.jsx"
@@ -45,6 +45,7 @@ export default function App() {
   const oneDay = 24 * 60 * 60 * 1000
 
   if (!lastSync || now - parseInt(lastSync) > oneDay) {
+    syncTeams()
     syncPlayers().then(() => syncStats()).then(() => {
       localStorage.setItem('lastSync', now.toString())
       setRosterVersion(v => v + 1)

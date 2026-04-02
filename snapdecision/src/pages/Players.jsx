@@ -12,7 +12,7 @@ export default function Players({ onPlayerClick }) {
   const [activeTab, setActiveTab] = useState("my-players");
 const [players, setPlayers] = useState([]);
 const [search, setSearch] = useState("");
-const [sortBy, setSortBy] = useState("most")
+const [sortBy, setSortBy] = useState("proj")
 const [posFilter, setPosFilter] = useState("ALL")
 
 useEffect(() => {
@@ -30,6 +30,7 @@ const filteredPlayers = players
     if (sortBy === "name")  return a.name.localeCompare(b.name)
     if (sortBy === "most")  return Number(b.stats?.avg || 0) - Number(a.stats?.avg || 0)
     if (sortBy === "least") return Number(a.stats?.avg || 0) - Number(b.stats?.avg || 0)
+    if (sortBy === "proj")  return Number(b.stats?.proj || 0) - Number(a.stats?.proj || 0)
     return 0
   })
 
@@ -59,15 +60,16 @@ const filteredPlayers = players
       { value: "K",   label: "K" },
     ]}
   />
-  <SelectDropdown
-    value={sortBy}
-    onChange={setSortBy}
-    options={[
-      { value: "most",  label: "Sort: Most Points" },
-      { value: "least", label: "Sort: Least Points" },
-      { value: "name",  label: "Sort: Name" },
-    ]}
-  />
+ <SelectDropdown
+  value={sortBy}
+  onChange={setSortBy}
+  options={[
+    { value: "proj",  label: "Sort: Projected" },
+    { value: "most",  label: "Sort: Most Points" },
+    { value: "least", label: "Sort: Least Points" },
+    { value: "name",  label: "Sort: Name" },
+  ]}
+/>
 </div>
 
       <div className="tabs">
