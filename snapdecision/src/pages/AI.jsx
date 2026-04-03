@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { SYSTEM_PROMPT, WELCOME_MESSAGE } from "../data.js";
+import { SYSTEM_PROMPT } from "../data.js";
 import "../css/ai.css";
 
 export default function AI() {
-  const [messages, setMessages] = useState([{ role: "assistant", content: WELCOME_MESSAGE }]);
+  const [messages, setMessages] = useState([{ role: "assistant", content: "Welcome to Winner Intelligence. Ask me anything about your roster, start/sit decisions, waiver targets, or matchup analysis — I'm here to help you win." }]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
 
