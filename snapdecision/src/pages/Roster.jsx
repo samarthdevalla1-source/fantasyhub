@@ -9,13 +9,13 @@ function trendColor(t) {
 }
 
 export default function Roster({ userId, rosterVersion, onPlayerClick }) {
-  const [roster, setRoster]         = useState([])
-  const [players, setPlayers]       = useState([])
-  const [search, setSearch]         = useState("")
-  const [loading, setLoading]       = useState(true)
-  const [swapping, setSwapping]     = useState(null)
-  const inputRef                    = useRef(null)
+  const [roster, setRoster]               = useState([])
+  const [players, setPlayers]             = useState([])
+  const [search, setSearch]               = useState("")
+  const [loading, setLoading]             = useState(true)
+  const [swapping, setSwapping]           = useState(null)
   const [dropdownStyle, setDropdownStyle] = useState({})
+  const inputRef                          = useRef(null)
 
   useEffect(() => {
     if (!userId) return
@@ -24,18 +24,18 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
   }, [userId, rosterVersion])
 
   async function loadRoster() {
-  setLoading(true)
-  const data = await getRoster(userId)
-  const hasSlots = data.some(r => r.slot && r.slot !== 'BENCH')
-  if (!hasSlots) {
-    const withLineup = calculateBestLineup(data)
-    await saveLineup(userId, withLineup)
-    setRoster(withLineup)
-  } else {
-    setRoster(data)
+    setLoading(true)
+    const data = await getRoster(userId)
+    const hasSlots = data.some(r => r.slot && r.slot !== 'BENCH')
+    if (!hasSlots) {
+      const withLineup = calculateBestLineup(data)
+      await saveLineup(userId, withLineup)
+      setRoster(withLineup)
+    } else {
+      setRoster(data)
+    }
+    setLoading(false)
   }
-  setLoading(false)
-}
 
   async function handleAdd(playerId) {
     if (roster.some(r => r.player_id === playerId)) return
@@ -50,47 +50,46 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
   }
 
   async function handleSwap(player) {
-  if (swapping === null) {
-    setSwapping(player)
-    return
-  }
+    if (swapping === null) {
+      setSwapping(player)
+      return
+    }
 
-  if (swapping.player_id === player.player_id) {
+    if (swapping.player_id === player.player_id) {
+      setSwapping(null)
+      return
+    }
+
+    const flexPositions = ['RB', 'WR', 'TE']
+    const swappingPos = swapping.players?.position
+    const targetPos = player.players?.position
+    const swappingSlot = swapping.slot
+    const targetSlot = player.slot
+
+    const swappingIsFlexEligible = flexPositions.includes(swappingPos)
+    const targetIsFlexEligible = flexPositions.includes(targetPos)
+
+    const validSwap =
+      swappingPos === targetPos ||
+      (swappingSlot === 'FLEX' && targetIsFlexEligible) ||
+      (targetSlot === 'FLEX' && swappingIsFlexEligible)
+
+    if (!validSwap) return
+
+    const updatedRoster = roster.map(r => {
+      if (r.player_id === swapping.player_id) {
+        return { ...r, slot: player.slot, is_starter: player.is_starter }
+      }
+      if (r.player_id === player.player_id) {
+        return { ...r, slot: swapping.slot, is_starter: swapping.is_starter }
+      }
+      return r
+    })
+
+    setRoster(updatedRoster)
     setSwapping(null)
-    return
+    await saveLineup(userId, updatedRoster)
   }
-
-  const flexPositions = ['RB', 'WR', 'TE']
-  const swappingPos = swapping.players?.position
-  const targetPos = player.players?.position
-  const swappingSlot = swapping.slot
-  const targetSlot = player.slot
-
-  const swappingIsFlexEligible = flexPositions.includes(swappingPos)
-  const targetIsFlexEligible = flexPositions.includes(targetPos)
-
-  const validSwap =
-    swappingPos === targetPos ||
-    (swappingSlot === 'FLEX' && targetIsFlexEligible) ||
-    (targetSlot === 'FLEX' && swappingIsFlexEligible)
-
-if (!validSwap) return
-  
-
-  const updatedRoster = roster.map(r => {
-    if (r.player_id === swapping.player_id) {
-      return { ...r, slot: player.slot, is_starter: player.is_starter }
-    }
-    if (r.player_id === player.player_id) {
-      return { ...r, slot: swapping.slot, is_starter: swapping.is_starter }
-    }
-    return r
-  })
-
-  setRoster(updatedRoster)
-  setSwapping(null)
-  await saveLineup(userId, updatedRoster)
-}
 
   const rosterPlayerIds = roster.map(r => r.player_id)
 
@@ -100,6 +99,22 @@ if (!validSwap) return
         .filter(p => !rosterPlayerIds.includes(p.id))
         .slice(0, 8)
     : []
+
+  useEffect(() => {
+  if (search.length > 1 && inputRef.current) {
+    const rect = inputRef.current.getBoundingClientRect()
+    setDropdownStyle({
+      top: rect.bottom + 6,
+      left: rect.left,
+      width: rect.width,
+      background: "#111",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 8,
+      overflow: "hidden",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+    })
+  }
+}, [search])
 
   const starters = SLOT_ORDER
     .filter(s => s !== 'BENCH')
@@ -129,12 +144,12 @@ if (!validSwap) return
 
     return (
       <tr key={r?.player_id} style={{
-  opacity: swapping && !isEligibleForSwap ? 0.25 : 1,
-  transition: "opacity 0.2s",
-  pointerEvents: swapping && !isEligibleForSwap ? "none" : "auto",
-  background: isSwapping ? "rgba(245,166,35,0.08)" : "transparent",
-  outline: isSwapping ? "1px solid rgba(245,166,35,0.3)" : "none"
-}}>
+        opacity: swapping && !isEligibleForSwap ? 0.25 : 1,
+        transition: "opacity 0.2s",
+        pointerEvents: swapping && !isEligibleForSwap ? "none" : "auto",
+        background: isSwapping ? "rgba(245,166,35,0.08)" : "transparent",
+        outline: isSwapping ? "1px solid rgba(245,166,35,0.3)" : "none"
+      }}>
         {showSlot && (
           <td style={{
             fontFamily: "'Rajdhani', sans-serif",
@@ -167,35 +182,35 @@ if (!validSwap) return
               style={{ fontWeight: 600, cursor: "pointer", color: "var(--accent)" }}
               onClick={() => onPlayerClick(r.players)}
             >{p.name}</span>
-            </div>
             {(() => {
-  const trend = getPlayerTrend(r.players)
-  if (trend === "hot") return <span style={{
-    fontSize: 10,
-    fontWeight: 700,
-    color: "var(--green)",
-    background: "rgba(0,200,83,0.1)",
-    border: "1px solid rgba(0,200,83,0.2)",
-    borderRadius: 4,
-    padding: "2px 6px",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    marginLeft: 6
-  }}>🔥</span>
-  if (trend === "cold") return <span style={{
-    fontSize: 10,
-    fontWeight: 700,
-    color: "var(--accent2)",
-    background: "rgba(255,61,87,0.1)",
-    border: "1px solid rgba(255,61,87,0.2)",
-    borderRadius: 4,
-    padding: "2px 6px",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    marginLeft: 6
-  }}>📉</span>
-  return null
-})()}
+              const trend = getPlayerTrend(r.players)
+              if (trend === "hot") return <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "var(--green)",
+                background: "rgba(0,200,83,0.1)",
+                border: "1px solid rgba(0,200,83,0.2)",
+                borderRadius: 4,
+                padding: "2px 6px",
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                marginLeft: 6
+              }}>🔥</span>
+              if (trend === "cold") return <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "var(--accent2)",
+                background: "rgba(255,61,87,0.1)",
+                border: "1px solid rgba(255,61,87,0.2)",
+                borderRadius: 4,
+                padding: "2px 6px",
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                marginLeft: 6
+              }}>📉</span>
+              return null
+            })()}
+          </div>
         </td>
         <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
         <td style={{ color: "var(--muted)", fontSize: 12 }}>{p.team}</td>
@@ -262,35 +277,16 @@ if (!validSwap) return
         </div>
       )}
 
-      <div style={{ position: "relative", zIndex: 10 }}>
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card-title">Add Player</div>
-          <input
-            ref={inputRef}
-            className="ai-input"
-            style={{ width: "100%" }}
-            placeholder="Search for a player to add..."
-            value={search}
-            onChange={e => {
-              setSearch(e.target.value)
-              if (inputRef.current) {
-                const rect = inputRef.current.getBoundingClientRect()
-                setDropdownStyle({
-                  position: "fixed",
-                  top: rect.bottom + 6,
-                  left: rect.left,
-                  width: rect.width,
-                  background: "#111",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-                  zIndex: 9999
-                })
-              }
-            }}
-          />
-        </div>
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title">Add Player</div>
+        <input
+          ref={inputRef}
+          className="ai-input"
+          style={{ width: "100%" }}
+          placeholder="Search for a player to add..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
       </div>
 
       {searchResults.length > 0 && (
@@ -301,7 +297,6 @@ if (!validSwap) return
         />
       )}
 
-      {/* STARTERS */}
       <div className="card" style={{ marginBottom: 20, position: "relative", zIndex: 1 }}>
         <div className="card-title">Starters</div>
         {loading ? (
@@ -328,7 +323,6 @@ if (!validSwap) return
         )}
       </div>
 
-      {/* BENCH */}
       <div className="card" style={{ position: "relative", zIndex: 1 }}>
         <div className="card-title">Bench</div>
         {loading ? (

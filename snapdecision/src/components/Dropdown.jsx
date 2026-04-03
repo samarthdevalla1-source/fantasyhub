@@ -1,46 +1,40 @@
 import { createPortal } from "react-dom"
 import { useState, useRef, useEffect } from "react"
 
-export function SearchDropdown({ results, onAdd }) {
+export function SearchDropdown({ results, onAdd, style }) {
   return createPortal(
     <div style={{
+      ...style,
       position: "fixed",
-      top: 0, left: 0, right: 0, bottom: 0,
       zIndex: 9999,
-      pointerEvents: "none"
+      pointerEvents: "all"
     }}>
-      <div id="dropdown-anchor" style={{
-        position: "absolute",
-        pointerEvents: "all"
-      }}>
-        {results.map((p, i) => (
-          <div key={i}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "10px 14px",
-              borderBottom: "1px solid rgba(255,255,255,0.05)",
-              background: "#111",
-              cursor: "pointer",
-              transition: "background 0.15s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-            onMouseLeave={e => e.currentTarget.style.background = "#111"}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span className={`pos-badge pos-${p.position}`}>{p.position}</span>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.team} · {p.stats?.avg || 0} avg pts</div>
-              </div>
+      {results.map((p, i) => (
+        <div key={i}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "10px 14px",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            cursor: "pointer",
+            transition: "background 0.15s"
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span className={`pos-badge pos-${p.position}`}>{p.position}</span>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.stats?.avg || 0} avg pts</div>
             </div>
-            <button className="add-btn" onClick={() => onAdd(p)}>Add</button>
           </div>
-        ))}
-      </div>
+          <button className="add-btn" onClick={() => onAdd(p)}>Add</button>
+        </div>
+      ))}
     </div>,
-    document.getElementById("portal")
+    document.body
   )
 }
 
