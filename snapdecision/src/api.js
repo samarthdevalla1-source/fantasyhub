@@ -390,6 +390,25 @@ const avgScore = Math.min((avgPts / 20) * 100, 100)
   }
 }
 
+export function getNFLWeek() {
+  const SEASON_START = new Date('2025-09-04T00:00:00')
+  const SEASON_END   = new Date('2026-01-05T00:00:00')
+  const now = new Date()
+
+  if (now < SEASON_START || now >= SEASON_END) {
+    return { week: now < SEASON_START ? 1 : 18, inSeason: false }
+  }
+
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000
+  const week = Math.min(Math.floor((now - SEASON_START) / msPerWeek) + 1, 18)
+  return { week, inSeason: true }
+}
+
+export function getDaysUntilSunday() {
+  const day = new Date().getDay() // 0=Sun
+  return day === 0 ? 0 : 7 - day
+}
+
 export async function getPlayerWeeklyStats(playerId) {
   const { data, error } = await supabase
     .from('weekly_stats')

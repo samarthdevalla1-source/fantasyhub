@@ -1,17 +1,17 @@
 import { createPortal } from "react-dom"
 import { useState, useEffect } from "react"
-import { getPlayers, getSimilarPlayers, getPlayerTrend, getPlayerWeeklyStats } from "../api.js"
+import { getPlayers, getSimilarPlayers, getPlayerTrend, getPlayerWeeklyStats, getRoster, addToRoster, removeFromRoster } from "../api.js"
 
-export default function PlayerProfile({ player, onClose }) {
+export default function PlayerProfile({ player, userId, onClose, onRosterChange }) {
   if (!player) return null
 
-  const weekly = player.stats?.weeklyPoints || []
   const avg    = player.stats?.avg || 0
   const proj   = player.stats?.proj || 0
   const trend  = player.stats?.trend || 0
-  const max    = Math.max(...weekly, 1)
 const [weeklyStats, setWeeklyStats] = useState([])
 const [allPlayers, setAllPlayers] = useState([])
+const [onRoster, setOnRoster] = useState(false)
+const [rosterActionLoading, setRosterActionLoading] = useState(false)
 
 useEffect(() => {
   getPlayers().then(data => setAllPlayers(data))
@@ -21,6 +21,27 @@ useEffect(() => {
   if (!player) return
   getPlayerWeeklyStats(player.id).then(data => setWeeklyStats(data))
 }, [player])
+
+useEffect(() => {
+  if (!userId || !player) return
+  getRoster(userId).then(roster => {
+    setOnRoster(roster.some(r => r.player_id === player.id))
+  })
+}, [userId, player])
+
+async function handleRosterAction() {
+  if (!userId || rosterActionLoading) return
+  setRosterActionLoading(true)
+  if (onRoster) {
+    await removeFromRoster(userId, player.id)
+    setOnRoster(false)
+  } else {
+    await addToRoster(userId, player.id)
+    setOnRoster(true)
+  }
+  onRosterChange?.()
+  setRosterActionLoading(false)
+}
 
 const similarPlayers = allPlayers.length > 0
   ? getSimilarPlayers(player, allPlayers)
@@ -101,16 +122,35 @@ const similarPlayers = allPlayers.length > 0
               <span style={{ fontSize: 12, color: "var(--muted)", textTransform: "capitalize" }}>{player.status}</span>
             </div>
           </div>
-          <button onClick={onClose} style={{
-            background: "transparent",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "var(--muted)",
-            borderRadius: 8,
-            padding: "6px 14px",
-            cursor: "pointer",
-            fontFamily: "Inter, sans-serif",
-            fontSize: 12
-          }}>Close</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {userId && (
+              <button onClick={handleRosterAction} disabled={rosterActionLoading} style={{
+                background: onRoster ? "rgba(255,61,87,0.08)" : "rgba(0,200,83,0.08)",
+                border: `1px solid ${onRoster ? "rgba(255,61,87,0.3)" : "rgba(0,200,83,0.3)"}`,
+                color: onRoster ? "var(--accent2)" : "var(--green)",
+                borderRadius: 8,
+                padding: "6px 14px",
+                cursor: rosterActionLoading ? "default" : "pointer",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                transition: "all 0.15s",
+                opacity: rosterActionLoading ? 0.6 : 1
+              }}>
+                {rosterActionLoading ? "..." : onRoster ? "Drop" : "Add"}
+              </button>
+            )}
+            <button onClick={onClose} style={{
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "var(--muted)",
+              borderRadius: 8,
+              padding: "6px 14px",
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 12
+            }}>Close</button>
+          </div>
         </div>
 
         {/* STAT CARDS */}

@@ -78,7 +78,7 @@ export default function App() {
   const PAGES = {
   dashboard: <Dashboard userId={session?.user?.id} rosterVersion={rosterVersion} onPlayerClick={setSelectedPlayer} />,
   roster:    <Roster userId={session?.user?.id} rosterVersion={rosterVersion} onPlayerClick={setSelectedPlayer} />,
-  players:   <Players onPlayerClick={setSelectedPlayer} />,
+  players:   <Players userId={session?.user?.id} onPlayerClick={setSelectedPlayer} />,
   ai:        <AI />,
 }
 
@@ -128,7 +128,9 @@ export default function App() {
 )}
 <PlayerProfile
   player={selectedPlayer}
+  userId={session?.user?.id}
   onClose={() => setSelectedPlayer(null)}
+  onRosterChange={() => setRosterVersion(v => v + 1)}
 />
     </div>
   )

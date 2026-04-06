@@ -1,11 +1,33 @@
 import { useState, useEffect, useRef } from "react"
-import { getRoster, addToRoster, removeFromRoster, getPlayers, saveLineup, getPlayerTrend } from "../api.js"
+import { getRoster, addToRoster, removeFromRoster, getPlayers, saveLineup, getPlayerTrend, getNFLWeek } from "../api.js"
 import { calculateBestLineup, SLOT_LABELS, SLOT_ORDER } from "../lineup.js"
 import { SearchDropdown } from "../components/Dropdown.jsx"
 import "../css/roster.css"
 
+const FLEX_POSITIONS = ['RB', 'WR', 'TE']
+
 function trendColor(t) {
   return t > 80 ? "var(--green)" : t > 60 ? "var(--accent)" : "var(--accent3)"
+}
+
+function TrendBadge({ trend }) {
+  if (trend === "hot") return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, color: "var(--green)",
+      background: "rgba(0,200,83,0.1)", border: "1px solid rgba(0,200,83,0.2)",
+      borderRadius: 4, padding: "2px 6px", letterSpacing: 1,
+      textTransform: "uppercase", marginLeft: 6
+    }}>🔥</span>
+  )
+  if (trend === "cold") return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, color: "var(--accent2)",
+      background: "rgba(255,61,87,0.1)", border: "1px solid rgba(255,61,87,0.2)",
+      borderRadius: 4, padding: "2px 6px", letterSpacing: 1,
+      textTransform: "uppercase", marginLeft: 6
+    }}>📉</span>
+  )
+  return null
 }
 
 export default function Roster({ userId, rosterVersion, onPlayerClick }) {
@@ -60,14 +82,13 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
       return
     }
 
-    const flexPositions = ['RB', 'WR', 'TE']
     const swappingPos = swapping.players?.position
     const targetPos = player.players?.position
     const swappingSlot = swapping.slot
     const targetSlot = player.slot
 
-    const swappingIsFlexEligible = flexPositions.includes(swappingPos)
-    const targetIsFlexEligible = flexPositions.includes(targetPos)
+    const swappingIsFlexEligible = FLEX_POSITIONS.includes(swappingPos)
+    const targetIsFlexEligible = FLEX_POSITIONS.includes(targetPos)
 
     const validSwap =
       swappingPos === targetPos ||
@@ -96,25 +117,24 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
   const searchResults = search.length > 1
     ? players
         .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-        .filter(p => !rosterPlayerIds.includes(p.id))
         .slice(0, 8)
     : []
 
   useEffect(() => {
-  if (search.length > 1 && inputRef.current) {
-    const rect = inputRef.current.getBoundingClientRect()
-    setDropdownStyle({
-      top: rect.bottom + 6,
-      left: rect.left,
-      width: rect.width,
-      background: "#111",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 8,
-      overflow: "hidden",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-    })
-  }
-}, [search])
+    if (search.length > 1 && inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect()
+      setDropdownStyle({
+        top: rect.bottom + 6,
+        left: rect.left,
+        width: rect.width,
+        background: "#111",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 8,
+        overflow: "hidden",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+      })
+    }
+  }, [search])
 
   const starters = SLOT_ORDER
     .filter(s => s !== 'BENCH')
@@ -133,13 +153,12 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
 
     const p = r.players
     const isSwapping = swapping?.player_id === r.player_id
-    const flexPositions = ['RB', 'WR', 'TE']
 
     const isEligibleForSwap = swapping
       ? swapping.player_id === r.player_id ||
         swapping.players?.position === r.players?.position ||
-        (swapping.slot === 'FLEX' && flexPositions.includes(r.players?.position)) ||
-        (r.slot === 'FLEX' && flexPositions.includes(swapping.players?.position))
+        (swapping.slot === 'FLEX' && FLEX_POSITIONS.includes(r.players?.position)) ||
+        (r.slot === 'FLEX' && FLEX_POSITIONS.includes(swapping.players?.position))
       : true
 
     return (
@@ -182,34 +201,7 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
               style={{ fontWeight: 600, cursor: "pointer", color: "var(--accent)" }}
               onClick={() => onPlayerClick(r.players)}
             >{p.name}</span>
-            {(() => {
-              const trend = getPlayerTrend(r.players)
-              if (trend === "hot") return <span style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: "var(--green)",
-                background: "rgba(0,200,83,0.1)",
-                border: "1px solid rgba(0,200,83,0.2)",
-                borderRadius: 4,
-                padding: "2px 6px",
-                letterSpacing: 1,
-                textTransform: "uppercase",
-                marginLeft: 6
-              }}>🔥</span>
-              if (trend === "cold") return <span style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: "var(--accent2)",
-                background: "rgba(255,61,87,0.1)",
-                border: "1px solid rgba(255,61,87,0.2)",
-                borderRadius: 4,
-                padding: "2px 6px",
-                letterSpacing: 1,
-                textTransform: "uppercase",
-                marginLeft: 6
-              }}>📉</span>
-              return null
-            })()}
+            <TrendBadge trend={getPlayerTrend(r.players)} />
           </div>
         </td>
         <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
@@ -260,7 +252,7 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
     <div>
       <div className="page-header">
         <div className="page-title">My Roster</div>
-        <div className="page-subtitle">Week 14 · {roster.length} players</div>
+        <div className="page-subtitle">Week {getNFLWeek().week} · {roster.length} players</div>
       </div>
 
       {swapping && (
@@ -292,7 +284,10 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
       {searchResults.length > 0 && (
         <SearchDropdown
           results={searchResults}
+          rosterPlayerIds={rosterPlayerIds}
           onAdd={p => handleAdd(p.id)}
+          onDrop={p => handleDrop(p.id)}
+          onViewProfile={onPlayerClick}
           style={dropdownStyle}
         />
       )}
@@ -317,7 +312,7 @@ export default function Roster({ userId, rosterVersion, onPlayerClick }) {
               </tr>
             </thead>
             <tbody>
-              {starters.map((r, i) => renderPlayerRow(r, SLOT_ORDER[i]))}
+              {starters.map(r => renderPlayerRow(r, true))}
             </tbody>
           </table>
         )}

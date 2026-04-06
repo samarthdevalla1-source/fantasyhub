@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import "../css/dashboard.css";
-import { getRoster, calculatecurrentRosterGrade } from "../api.js"
+import { getRoster, calculatecurrentRosterGrade, getNFLWeek, getDaysUntilSunday } from "../api.js"
 function trendColor(t) {
   return t > 80 ? "var(--green)" : t > 60 ? "var(--accent)" : "var(--accent3)";
 }
@@ -79,9 +79,18 @@ Base all recommendations on this real roster data.`
   return (
     <div>
       <div className="page-header">
-        <div className="week-badge">Week 14</div>
+        <div className="week-badge">Week {getNFLWeek().week}</div>
         <div className="page-title">Your Dashboard</div>
-        <div className="page-subtitle">Sunday 1:00 PM kickoff · 3 days away</div>
+        <div className="page-subtitle">
+          {(() => {
+            const { inSeason } = getNFLWeek()
+            if (!inSeason) return "NFL offseason"
+            const days = getDaysUntilSunday()
+            if (days === 0) return "Gameday"
+            if (days === 1) return "Sunday tomorrow"
+            return `Sunday in ${days} days`
+          })()}
+        </div>
       </div>
 
      <div className="stat-grid">
